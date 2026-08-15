@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KHUMAR | Secure Autonomous Vault & Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #09090b;
+      --surface: #121316;
+      --surface-elevated: #181a1f;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.25);
+      --text-main: #ffffff;
+      --text-muted: #8b8f9a;
+      --accent: #d4af37;
+      --accent-glow: rgba(212, 175, 55, 0.2);
+      --success: #00d084;
+      --danger: #ff5555;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 6rem;
+    }
+
+    /* =========================================================
+       1. AUTHENTICATION & LOCK SCREEN OVERLAY
+       ========================================================= */
+    #authGateway {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 30%, #15161c 0%, #08090b 100%);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      backdrop-filter: blur(25px);
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    #authGateway.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid var(--border-hover);
+      border-radius: 20px;
+      padding: 3rem 2.5rem;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 50px rgba(212, 175, 55, 0.08);
+      text-align: center;
+      position: relative;
+    }
+
+    .vault-icon-badge {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 1.5rem;
+      background: linear-gradient(135deg, #1f2128 0%, #121316 100%);
+      border: 1px solid var(--border-hover);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      color: var(--accent);
+      box-shadow: 0 0 25px var(--accent-glow);
+    }
+
+    .auth-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .auth-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+
+    .auth-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+
+    .auth-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 0.2rem;
+      display: block;
+    }
+
+    .auth-input {
+      width: 100%;
+      background: #090a0c;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem 1.2rem;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .auth-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .pin-input {
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 8px;
+      font-size: 1.4rem;
+      text-align: center;
+    }
+
+    .biometric-box {
+      margin: 1.5rem 0 1rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .bio-btn {
+      width: 100%;
+      background: rgba(212, 175, 55, 0.08);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      color: var(--accent);
+      padding: 0.9rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .bio-btn:hover {
+      background: rgba(212, 175, 55, 0.16);
+      border-color: var(--accent);
+    }
+
+    .auth-action-btn {
+      width: 100%;
+      background: #ffffff;
+      color: #09090b;
+      padding: 1rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 0.5rem;
+    }
+
+    .auth-action-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .auth-toggle-link {
+      margin-top: 1.2rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .auth-toggle-link span {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    /* =========================================================
+       2. TOP NAVIGATION
+       ========================================================= */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.4rem 6%;
+      background: rgba(9, 9, 11, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--text-main);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .stat-pill {
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.4rem 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      color: var(--text-muted);
+    }
+
+    .stat-pill span {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-hover);
+      color: #fff;
+      padding: 0.4rem 0.9rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: #fff;
+    }
+
+    .nav-btn.danger:hover {
+      background: rgba(255, 85, 85, 0.15);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    /* Profile Header */
+    .profile-hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .badge {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 0.35rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .photographer-name {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 0.8rem;
+      outline: none;
+      border-bottom: 1px dashed transparent;
+      transition: border-color 0.2s;
+    }
+
+    .photographer-name:focus {
+      border-bottom-color: var(--accent);
+    }
+
+    .bio {
+      color: var(--text-muted);
+      max-width: 540px;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      outline: none;
+      border-bottom: 1px dashed transparent;
+      transition: border-color 0.2s;
+    }
+
+    .bio:focus {
+      border-bottom-color: var(--accent);
+    }
+
+    /* Dedicated Upload Zone */
+    .upload-stage {
+      max-width: 850px;
+      width: 100%;
+      margin: 0 auto 3rem;
+      padding: 0 1.5rem;
+    }
+
+    .dropzone {
+      background: linear-gradient(180deg, var(--surface) 0%, rgba(18, 19, 22, 0.4) 100%);
+      border: 1.5px dashed var(--border-hover);
+      border-radius: 14px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: var(--accent);
+      background: rgba(212, 175, 55, 0.04);
+      box-shadow: 0 0 35px var(--accent-glow);
+    }
+
+    .dropzone-icon {
+      font-size: 2.4rem;
+      margin-bottom: 0.8rem;
+      display: inline-block;
+    }
+
+    .dropzone h3 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 0.4rem;
+    }
+
+    .dropzone p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1.4rem;
+    }
+
+    .browse-btn {
+      display: inline-block;
+      background: #ffffff;
+      color: #09090b;
+      padding: 0.75rem 2rem;
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      max-width: 1200px;
+      margin: 0 auto 2rem;
+      padding: 0 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .categories {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.45rem 1rem;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      background: #fff;
+      color: #000;
+      border-color: #fff;
+    }
+
+    .clear-all-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 75, 75, 0.3);
+      color: #ff6666;
+      padding: 0.45rem 1rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+      transition: all 0.2s;
+    }
+
+    .clear-all-btn:hover {
+      background: rgba(255, 75, 75, 0.15);
+    }
+
+    /* Dynamic Portfolio Grid */
+    .portfolio-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-auto-rows: 260px;
+      grid-auto-flow: dense;
+      gap: 1.5rem;
+      min-height: 250px;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4.5rem 1rem;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      background: rgba(18, 19, 22, 0.3);
+      text-align: center;
+    }
+
+    .empty-state-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      opacity: 0.4;
+    }
+
+    .empty-state h4 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      color: #fff;
+    }
+
+    .empty-state p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      max-width: 380px;
+    }
+
+    .portfolio-item {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .portfolio-item.tall { grid-row: span 2; }
+    .portfolio-item.wide { grid-column: span 2; }
+    .portfolio-item.heroic { grid-column: span 2; grid-row: span 2; }
+
+    .portfolio-item:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-hover);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    .portfolio-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+
+    .portfolio-item:hover img {
+      transform: scale(1.04);
+    }
+
+    .note-indicator {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(10, 10, 12, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      backdrop-filter: blur(8px);
+      z-index: 2;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 35%, rgba(9, 9, 11, 0.95) 100%);
+      opacity: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 1.4rem;
+      transition: opacity 0.3s ease;
+      z-index: 1;
+    }
+
+    .portfolio-item:hover .overlay {
+      opacity: 1;
+    }
+
+    .overlay-category {
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.2rem;
+      font-weight: 700;
+    }
+
+    .overlay-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-bottom: 0.3rem;
+    }
+
+    .overlay-note-preview {
+      font-size: 0.78rem;
+      color: #d1d5db;
+      line-height: 1.4;
+      margin-bottom: 0.6rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-style: italic;
+    }
+
+    .exif-preview {
+      display: flex;
+      gap: 0.6rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* =========================================================
+       3. SETTINGS DRAWER / MODAL
+       ========================================================= */
+    .settings-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 5, 7, 0.92);
+      backdrop-filter: blur(20px);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .settings-modal.active {
+      display: flex;
+    }
+
+    .settings-wrapper {
+      background: var(--surface);
+      border: 1px solid var(--border-hover);
+      border-radius: 18px;
+      max-width: 560px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 2.5rem;
+      position: relative;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.9);
+    }
+
+    .settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settings-title {
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .settings-section {
+      background: #090a0c;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #fff;
+    }
+
+    .status-tag {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.25rem 0.6rem;
+      border-radius: 50px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .status-tag.active {
+      background: rgba(0, 208, 132, 0.15);
+      border: 1px solid rgba(0, 208, 132, 0.3);
+      color: var(--success);
+    }
+
+    .status-tag.inactive {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .settings-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 1.2rem;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .sub-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-hover);
+      color: #fff;
+      padding: 0.7rem 1.2rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sub-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: #fff;
+    }
+
+    .sub-btn.primary {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .sub-btn.primary:hover {
+      opacity: 0.9;
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .sub-btn.danger {
+      background: rgba(255, 85, 85, 0.1);
+      border-color: rgba(255, 85, 85, 0.3);
+      color: var(--danger);
+    }
+
+    .sub-btn.danger:hover {
+      background: rgba(255, 85, 85, 0.2);
+    }
+
+    /* Lightbox Modal */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 5, 7, 0.95);
+      backdrop-filter: blur(18px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .lightbox.active {
+      display: flex;
+    }
+
+    .lightbox-wrapper {
+      max-width: 1200px;
+      width: 100%;
+      height: 88vh;
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      background: var(--surface);
+      border: 1px solid var(--border-hover);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.9);
+    }
+
+    .lightbox-img-box {
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 1.5rem;
+    }
+
+    .lightbox-img-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .lightbox-sidebar {
+      padding: 2.2rem;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      background: var(--surface-elevated);
+      border-left: 1px solid var(--border);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1.2rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.8rem;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .photo-title-input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px dashed var(--border);
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      width: 100%;
+      padding-bottom: 0.4rem;
+      margin-bottom: 1.5rem;
+      outline: none;
+    }
+
+    .photo-title-input:focus {
+      border-bottom-color: var(--accent);
+    }
+
+    .notepad-container {
+      background: #0c0d10;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    .notepad-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+
+    .notepad-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .save-status {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+    }
+
+    .save-status.saved {
+      color: var(--success);
+    }
+
+    .photo-notepad {
+      width: 100%;
+      height: 160px;
+      background: transparent;
+      border: none;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+    }
+
+    .photo-notepad::placeholder {
+      color: #4b5563;
+    }
+
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+
+    .spec-row span:first-child {
+      color: var(--text-muted);
+    }
+
+    .spec-row span:last-child {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .delete-btn {
+      background: rgba(255, 75, 75, 0.08);
+      border: 1px solid rgba(255, 75, 75, 0.25);
+      color: #ff6666;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .delete-btn:hover {
+      background: rgba(255, 75, 75, 0.2);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #181a1f;
+      border: 1px solid var(--accent);
+      color: #fff;
+      padding: 0.9rem 1.4rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 2000;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 900px) {
+      .lightbox-wrapper {
+        grid-template-columns: 1fr;
+        height: 94vh;
+      }
+      .lightbox-img-box {
+        max-height: 40vh;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================================
+       1. AUTHENTICATION & LOCK SCREEN OVERLAY
+       ========================================================= -->
+  <div id="authGateway">
+    <div class="auth-card">
+      <div class="vault-icon-badge">🔒</div>
+      <h2 class="auth-title" id="authGatewayTitle">VAULT LOCKED</h2>
+      <p class="auth-subtitle" id="authGatewaySubtitle">Authenticate with your PIN or biometric fingerprint to decrypt the visual portfolio.</p>
+
+      <form id="authForm" onsubmit="event.preventDefault(); handleAuthSubmit();">
+        <div class="auth-input-group" id="usernameGroup" style="display: none;">
+          <label class="auth-label">Vault Username</label>
+          <input type="text" id="authUsernameInput" class="auth-input" placeholder="e.g. arman_singh" autocomplete="username">
+        </div>
+
+        <div class="auth-input-group">
+          <label class="auth-label" id="pinLabel">Enter 4-Digit PIN</label>
+          <input type="password" id="authPinInput" class="auth-input pin-input" maxlength="6" placeholder="••••" pattern="[0-9]*" inputmode="numeric" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="auth-action-btn" id="authSubmitBtn">Unlock Vault</button>
+
+        <div class="biometric-box" id="biometricSection">
+          <button type="button" class="bio-btn" id="biometricAuthBtn" onclick="triggerBiometricAuth()">
+            <span>👆</span> Unlock with Fingerprint
+          </button>
+        </div>
+
+        <div class="auth-toggle-link" id="authToggleLink" onclick="toggleAuthMode()">
+          No account? <span>Create Master PIN & Register</span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Hidden File Input -->
+  <input type="file" id="globalFileInput" multiple accept="image/png, image/jpeg, image/webp" style="display: none;">
+
+  <!-- =========================================================
+       2. TOP NAVIGATION WITH SETTINGS & LOCK
+       ========================================================= -->
+  <nav>
+    <div class="logo">KHUMAR</div>
+    <div class="nav-actions">
+      <div class="stat-pill">USER: <span id="activeUserDisplay">GUEST</span></div>
+      <div class="stat-pill">PHOTOS: <span id="photoCount">0</span></div>
+      <button class="nav-btn" onclick="openSettingsModal()">
+        <span>⚙️</span> Settings
+      </button>
+      <button class="nav-btn danger" onclick="lockVault()">
+        <span>🔒</span> Lock
+      </button>
+    </div>
+  </nav>
+
+  <!-- Profile Section -->
+  <header class="profile-hero">
+    <div class="badge">Visual Archive</div>
+    <h1 class="photographer-name" id="photographerName" contenteditable="true" spellcheck="false">ARMAN SINGH</h1>
+    <p class="bio" id="photographerBio" contenteditable="true" spellcheck="false">
+      Personal visual archive and field notes. Secured behind PIN & Biometric credentials.
+    </p>
+  </header>
+
+  <!-- Upload Area -->
+  <section class="upload-stage">
+    <div class="dropzone" id="dropzoneContainer">
+      <div class="dropzone-icon">📁</div>
+      <h3>Drag & Drop Photos Here</h3>
+      <p>Supports JPG, PNG, and WebP. Automatically optimized and persisted.</p>
+      <div class="browse-btn">Select Photos From Device</div>
+    </div>
+  </section>
+
+  <!-- Filter & Action Controls -->
+  <section class="filter-bar">
+    <div class="categories" id="filterContainer">
+      <button class="filter-btn active" data-filter="all">All Works</button>
+      <button class="filter-btn" data-filter="Street">Street</button>
+      <button class="filter-btn" data-filter="Architecture">Architecture</button>
+      <button class="filter-btn" data-filter="Portraits">Portraits</button>
+      <button class="filter-btn" data-filter="Cinematic">Cinematic</button>
+    </div>
+    <button class="clear-all-btn" id="clearAllBtn" onclick="clearPortfolio()">Clear All</button>
+  </section>
+
+  <!-- Dynamic Grid -->
+  <main class="portfolio-grid" id="portfolioGrid">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-state-icon">📸</div>
+      <h4>Your Portfolio is Empty</h4>
+      <p>Drop your photos in the box above or click to select files from your computer or phone.</p>
+    </div>
+  </main>
+
+  <!-- =========================================================
+       3. SETTINGS & BIOMETRIC MANAGEMENT MODAL
+       ========================================================= -->
+  <div class="settings-modal" id="settingsModal">
+    <div class="settings-wrapper">
+      <div class="settings-header">
+        <h2 class="settings-title">Vault Settings</h2>
+        <button class="close-btn" style="position: static;" onclick="closeSettingsModal()">&times;</button>
+      </div>
+
+      <!-- Biometric Fingerprint Configuration -->
+      <div class="settings-section">
+        <div class="section-head">
+          <div class="section-title">
+            <span>👆</span> Biometric Fingerprint Lock
+          </div>
+          <span class="status-tag inactive" id="bioStatusTag">Disabled</span>
+        </div>
+        <p class="settings-desc">
+          Enroll Touch ID, Windows Hello, or Android Fingerprint sensor to unlock your visual archive without re-typing your PIN every session.
+        </p>
+        <div class="btn-row">
+          <button class="sub-btn primary" id="enrollBioBtn" onclick="handleEnrollBiometrics()">
+            Register / Update Fingerprint
+          </button>
+          <button class="sub-btn" id="testBioBtn" onclick="testBiometrics()">
+            Test Sensor
+          </button>
+          <button class="sub-btn danger" id="removeBioBtn" onclick="removeBiometrics()" style="display: none;">
+            Disable Biometrics
+          </button>
+        </div>
+      </div>
+
+      <!-- Master PIN Management -->
+      <div class="settings-section">
+        <div class="section-head">
+          <div class="section-title">
+            <span>🔢</span> Change Master PIN
+          </div>
+        </div>
+        <p class="settings-desc">
+          Update the numerical security PIN used to encrypt and decrypt the portfolio vault.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1rem;">
+          <input type="password" id="currentPinInput" class="auth-input pin-input" maxlength="6" placeholder="Current PIN" pattern="[0-9]*" inputmode="numeric">
+          <input type="password" id="newPinInput" class="auth-input pin-input" maxlength="6" placeholder="New PIN" pattern="[0-9]*" inputmode="numeric">
+        </div>
+        <button class="sub-btn" onclick="handleChangePin()">Update PIN</button>
+      </div>
+
+      <!-- Vault Diagnostics & Storage Management -->
+      <div class="settings-section">
+        <div class="section-head">
+          <div class="section-title">
+            <span>💾</span> Vault Database
+          </div>
+          <span class="status-tag active">IndexedDB Ready</span>
+        </div>
+        <p class="settings-desc">
+          Permanently clear all cached photos, field notes, and biometric keys on this machine.
+        </p>
+        <button class="sub-btn danger" onclick="resetMasterAccount()">Wipe Vault & Reset Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox Modal with Individual Notepad -->
+  <div class="lightbox" id="lightbox">
+    <div class="lightbox-wrapper">
+      <button class="close-btn" id="closeLightbox">&times;</button>
+      
+      <div class="lightbox-img-box">
+        <img id="lightboxImg" src="" alt="Frame preview">
+      </div>
+
+      <div class="lightbox-sidebar">
+        <div class="overlay-category" id="lightboxCategory">CATEGORY</div>
+        <input type="text" id="lightboxTitleInput" class="photo-title-input" placeholder="Title of this frame...">
+
+        <div class="notepad-container">
+          <div class="notepad-header">
+            <div class="notepad-label">
+              <span>✍️</span> Field Note / Story
+            </div>
+            <div class="save-status" id="saveStatus">Saved</div>
+          </div>
+          <textarea 
+            id="photoNotepad" 
+            class="photo-notepad" 
+            placeholder="Write the story, lighting setup, thoughts, or location details for this shot..."></textarea>
+        </div>
+
+        <div>
+          <div class="spec-row">
+            <span>Dimensions</span>
+            <span id="specDimensions">--</span>
+          </div>
+          <div class="spec-row">
+            <span>Aspect Geometry</span>
+            <span id="specAspect">--</span>
+          </div>
+          <div class="spec-row">
+            <span>Shutter Speed</span>
+            <span id="specShutter">1/500s</span>
+          </div>
+          <div class="spec-row">
+            <span>Aperture</span>
+            <span id="specAperture">f/2.0</span>
+          </div>
+          <div class="spec-row">
+            <span>Focal Length</span>
+            <span id="specFocal">35mm</span>
+          </div>
+        </div>
+
+        <button class="delete-btn" id="deletePhotoBtn">Remove Shot Permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toastMessage"></div>
+
+  <script>
+    /* =========================================================
+       1. AUTHENTICATION & PIN MANAGEMENT
+       ========================================================= */
+    let authMode = 'LOGIN';
+
+    async function hashPin(pin) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pin + '_khumar_vault_salt');
+      const hash = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function isRegistered() {
+      return !!localStorage.getItem('khumar_user_account');
+    }
+
+    function checkAuthGatewayState() {
+      const usernameGroup = document.getElementById('usernameGroup');
+      const authGatewayTitle = document.getElementById('authGatewayTitle');
+      const authGatewaySubtitle = document.getElementById('authGatewaySubtitle');
+      const authSubmitBtn = document.getElementById('authSubmitBtn');
+      const authToggleLink = document.getElementById('authToggleLink');
+      const biometricSection = document.getElementById('biometricSection');
+      const pinLabel = document.getElementById('pinLabel');
+
+      if (!isRegistered()) {
+        authMode = 'REGISTER';
+        usernameGroup.style.display = 'block';
+        authGatewayTitle.innerText = 'CREATE MASTER VAULT';
+        authGatewaySubtitle.innerText = 'Create your username and secret PIN to encrypt your portfolio.';
+        pinLabel.innerText = 'Set New 4-Digit PIN';
+        authSubmitBtn.innerText = 'Create Account & Enable Lock';
+        biometricSection.style.display = 'none';
+        authToggleLink.style.display = 'none';
+      } else {
+        authMode = 'LOGIN';
+        const account = JSON.parse(localStorage.getItem('khumar_user_account'));
+        usernameGroup.style.display = 'none';
+        authGatewayTitle.innerText = `UNLOCK VAULT`;
+        authGatewaySubtitle.innerText = `Welcome back, ${account.username.toUpperCase()}. Enter PIN or authenticate via fingerprint.`;
+        pinLabel.innerText = 'Enter 4-Digit PIN';
+        authSubmitBtn.innerText = 'Unlock Vault';
+        authToggleLink.style.display = 'block';
+        authToggleLink.innerHTML = `Not ${account.username}? <span>Reset & Register New Vault</span>`;
+
+        if (localStorage.getItem('khumar_biometric_enabled') === 'true') {
+          biometricSection.style.display = 'block';
+        } else {
+          biometricSection.style.display = 'none';
+        }
+      }
+    }
+
+    function toggleAuthMode() {
+      if (confirm("Reset current vault account on this device and create a new one?")) {
+        resetMasterAccount();
+      }
+    }
+
+    async function handleAuthSubmit() {
+      const pinInput = document.getElementById('authPinInput');
+      const usernameInput = document.getElementById('authUsernameInput');
+      const pin = pinInput.value.trim();
+
+      if (!pin || pin.length < 4) {
+        showToast("Please enter a valid 4-6 digit numeric PIN.");
+        return;
+      }
+
+      if (authMode === 'REGISTER') {
+        const username = usernameInput.value.trim() || 'ARMAN SINGH';
+        const hashedPin = await hashPin(pin);
+        
+        const account = {
+          username: username,
+          pinHash: hashedPin,
+          createdAt: Date.now()
+        };
+
+        localStorage.setItem('khumar_user_account', JSON.stringify(account));
+        localStorage.setItem('khumar_name', username.toUpperCase());
+        document.getElementById('photographerName').innerText = username.toUpperCase();
+
+        unlockVaultSuccess(username);
+      } else {
+        const account = JSON.parse(localStorage.getItem('khumar_user_account'));
+        const enteredHash = await hashPin(pin);
+
+        if (enteredHash === account.pinHash) {
+          unlockVaultSuccess(account.username);
+        } else {
+          showToast("Incorrect PIN. Please try again.");
+          pinInput.value = '';
+        }
+      }
+    }
+
+    function unlockVaultSuccess(username) {
+      document.getElementById('authGateway').classList.add('hidden');
+      document.getElementById('activeUserDisplay').innerText = username.toUpperCase();
+      document.getElementById('authPinInput').value = '';
+      updateSettingsBiometricUI();
+      showToast(`Vault unlocked for ${username.toUpperCase()}`);
+    }
+
+    function lockVault() {
+      document.getElementById('authGateway').classList.remove('hidden');
+      document.getElementById('authPinInput').value = '';
+      checkAuthGatewayState();
+      showToast("Vault Locked.");
+    }
+
+    /* =========================================================
+       2. SETTINGS PANEL LOGIC & BIOMETRIC CONTROLS
+       ========================================================= */
+    const settingsModal = document.getElementById('settingsModal');
+
+    function openSettingsModal() {
+      updateSettingsBiometricUI();
+      document.getElementById('currentPinInput').value = '';
+      document.getElementById('newPinInput').value = '';
+      settingsModal.classList.add('active');
+    }
+
+    function closeSettingsModal() {
+      settingsModal.classList.remove('active');
+    }
+
+    async function updateSettingsBiometricUI() {
+      const bioStatusTag = document.getElementById('bioStatusTag');
+      const removeBioBtn = document.getElementById('removeBioBtn');
+      const testBioBtn = document.getElementById('testBioBtn');
+      const isEnabled = localStorage.getItem('khumar_biometric_enabled') === 'true';
+
+      if (isEnabled) {
+        bioStatusTag.innerText = 'Fingerprint Active';
+        bioStatusTag.className = 'status-tag active';
+        removeBioBtn.style.display = 'inline-block';
+        testBioBtn.style.display = 'inline-block';
+      } else {
+        bioStatusTag.innerText = 'Not Configured';
+        bioStatusTag.className = 'status-tag inactive';
+        removeBioBtn.style.display = 'none';
+        testBioBtn.style.display = 'none';
+      }
+    }
+
+    async function handleEnrollBiometrics() {
+      const account = JSON.parse(localStorage.getItem('khumar_user_account')) || { username: 'ARMAN SINGH' };
+      await registerBiometrics(account.username);
+      updateSettingsBiometricUI();
+    }
+
+    async function registerBiometrics(username) {
+      try {
+        if (!window.PublicKeyCredential) {
+          showToast("WebAuthn Biometrics not supported on this browser.");
+          return;
+        }
+
+        const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        if (!isAvailable) {
+          showToast("No platform biometric sensor (Fingerprint / Touch ID) found on this device.");
+        }
+
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        const publicKeyCredentialCreationOptions = {
+          challenge: challenge,
+          rp: { name: "KHUMAR Vault" },
+          user: {
+            id: new TextEncoder().encode(username),
+            name: username,
+            displayName: username
+          },
+          pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform",
+            userVerification: "preferred"
+          },
+          timeout: 60000,
+          attestation: "direct"
+        };
+
+        const credential = await navigator.credentials.create({
+          publicKey: publicKeyCredentialCreationOptions
+        });
+
+        if (credential) {
+          const rawIdBase64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+          localStorage.setItem('khumar_biometric_enabled', 'true');
+          localStorage.setItem('khumar_biometric_cred_id', rawIdBase64);
+          updateSettingsBiometricUI();
+          showToast("Fingerprint sensor successfully registered to your Vault!");
+        }
+      } catch (err) {
+        console.warn("Biometric enrollment error/cancelled:", err);
+        showToast("Fingerprint registration cancelled or failed.");
+      }
+    }
+
+    async function triggerBiometricAuth() {
+      try {
+        const rawIdBase64 = localStorage.getItem('khumar_biometric_cred_id');
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        const publicKeyCredentialRequestOptions = {
+          challenge: challenge,
+          timeout: 60000,
+          userVerification: "preferred"
+        };
+
+        if (rawIdBase64) {
+          const rawId = Uint8Array.from(atob(rawIdBase64), c => c.charCodeAt(0));
+          publicKeyCredentialRequestOptions.allowCredentials = [{
+            id: rawId,
+            type: 'public-key',
+            transports: ['internal']
+          }];
+        }
+
+        const assertion = await navigator.credentials.get({
+          publicKey: publicKeyCredentialRequestOptions
+        });
+
+        if (assertion) {
+          const account = JSON.parse(localStorage.getItem('khumar_user_account'));
+          unlockVaultSuccess(account ? account.username : 'ARMAN SINGH');
+        }
+      } catch (err) {
+        console.error("Biometric verification failed:", err);
+        showToast("Biometric verification cancelled. Please enter PIN.");
+      }
+    }
+
+    async function testBiometrics() {
+      showToast("Scan your fingerprint now to test...");
+      await triggerBiometricAuth();
+    }
+
+    function removeBiometrics() {
+      if (confirm("Disable biometric fingerprint login? You will need your PIN to unlock.")) {
+        localStorage.removeItem('khumar_biometric_enabled');
+        localStorage.removeItem('khumar_biometric_cred_id');
+        updateSettingsBiometricUI();
+        showToast("Biometric fingerprint removed.");
+      }
+    }
+
+    async function handleChangePin() {
+      const currentPin = document.getElementById('currentPinInput').value.trim();
+      const newPin = document.getElementById('newPinInput').value.trim();
+
+      if (!currentPin || !newPin || newPin.length < 4) {
+        showToast("Please enter your current PIN and a valid new 4-6 digit PIN.");
+        return;
+      }
+
+      const account = JSON.parse(localStorage.getItem('khumar_user_account'));
+      const currentHash = await hashPin(currentPin);
+
+      if (currentHash !== account.pinHash) {
+        showToast("Current PIN is incorrect.");
+        return;
+      }
+
+      account.pinHash = await hashPin(newPin);
+      localStorage.setItem('khumar_user_account', JSON.stringify(account));
+      document.getElementById('currentPinInput').value = '';
+      document.getElementById('newPinInput').value = '';
+      showToast("Master PIN successfully updated!");
+    }
+
+    async function resetMasterAccount() {
+      if (confirm("WARNING: This will wipe your account, biometric fingerprint, and clear all uploaded portfolio photos. Continue?")) {
+        await dbClear();
+        localStorage.removeItem('khumar_user_account');
+        localStorage.removeItem('khumar_biometric_enabled');
+        localStorage.removeItem('khumar_biometric_cred_id');
+        localStorage.removeItem('khumar_name');
+        localStorage.removeItem('khumar_bio');
+        State.photos = [];
+        closeSettingsModal();
+        checkAuthGatewayState();
+        document.getElementById('authGateway').classList.remove('hidden');
+        renderPortfolio();
+        showToast("Vault reset to factory state.");
+      }
+    }
+
+    /* =========================================================
+       3. STORAGE ENGINE (IndexedDB + Optimizer)
+       ========================================================= */
+    const DB_NAME = 'KhumarPortfolioDB';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'photos';
+    let dbInstance = null;
+
+    async function initDB() {
+      return new Promise((resolve) => {
+        try {
+          if (!window.indexedDB) return resolve(null);
+          const request = indexedDB.open(DB_NAME, DB_VERSION);
+          request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+              db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+          };
+          request.onsuccess = (e) => {
+            dbInstance = e.target.result;
+            resolve(dbInstance);
+          };
+          request.onerror = () => resolve(null);
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    }
+
+    async function dbSave(photo) {
+      if (!dbInstance) return;
+      return new Promise((resolve) => {
+        try {
+          const tx = dbInstance.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          store.put(photo);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => resolve();
+        } catch (e) {
+          resolve();
+        }
+      });
+    }
+
+    async function dbGetAll() {
+      if (!dbInstance) return [];
+      return new Promise((resolve) => {
+        try {
+          const tx = dbInstance.transaction(STORE_NAME, 'readonly');
+          const store = tx.objectStore(STORE_NAME);
+          const request = store.getAll();
+          request.onsuccess = () => resolve(request.result || []);
+          request.onerror = () => resolve([]);
+        } catch (e) {
+          resolve([]);
+        }
+      });
+    }
+
+    async function dbDelete(id) {
+      if (!dbInstance) return;
+      return new Promise((resolve) => {
+        try {
+          const tx = dbInstance.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          store.delete(id);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => resolve();
+        } catch (e) {
+          resolve();
+        }
+      });
+    }
+
+    async function dbClear() {
+      if (!dbInstance) return;
+      return new Promise((resolve) => {
+        try {
+          const tx = dbInstance.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          store.clear();
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => resolve();
+        } catch (e) {
+          resolve();
+        }
+      });
+    }
+
+    /* =========================================================
+       4. STATE & PORTFOLIO LOGIC
+       ========================================================= */
+    const State = {
+      photos: [],
+      activeFilter: 'all',
+      activePhotoId: null
+    };
+
+    const categoriesPool = ['Street', 'Architecture', 'Portraits', 'Cinematic'];
+
+    const nameEl = document.getElementById('photographerName');
+    const bioEl = document.getElementById('photographerBio');
+
+    try {
+      if (localStorage.getItem('khumar_name')) nameEl.innerText = localStorage.getItem('khumar_name');
+      if (localStorage.getItem('khumar_bio')) bioEl.innerText = localStorage.getItem('khumar_bio');
+    } catch(e) {}
+
+    nameEl.addEventListener('input', () => {
+      try { localStorage.setItem('khumar_name', nameEl.innerText); } catch(e){}
+    });
+    bioEl.addEventListener('input', () => {
+      try { localStorage.setItem('khumar_bio', bioEl.innerText); } catch(e){}
+    });
+
+    function computeGridSpan(width, height) {
+      const ratio = width / height;
+      if (ratio > 1.4) return { class: 'wide', label: 'Panoramic / Wide' };
+      if (ratio < 0.8) return { class: 'tall', label: 'Vertical / Portrait' };
+      if (width >= 1200 && height >= 900) return { class: 'heroic', label: 'High-Res Hero' };
+      return { class: '', label: 'Standard 4:3' };
+    }
+
+    function renderPortfolio() {
+      const grid = document.getElementById('portfolioGrid');
+      const countEl = document.getElementById('photoCount');
+      const clearBtn = document.getElementById('clearAllBtn');
+      
+      grid.innerHTML = '';
+      countEl.innerText = State.photos.length;
+
+      if (State.photos.length > 0) {
+        clearBtn.style.display = 'block';
+      } else {
+        clearBtn.style.display = 'none';
+        grid.innerHTML = `
+          <div class="empty-state" id="emptyState">
+            <div class="empty-state-icon">📸</div>
+            <h4>Your Portfolio is Empty</h4>
+            <p>Drop your photos in the box above or click to select files from your device.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const filtered = State.activeFilter === 'all'
+        ? State.photos
+        : State.photos.filter(p => p.category.toLowerCase() === State.activeFilter.toLowerCase());
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <h4>No Photos in "${State.activeFilter}"</h4>
+            <p>Switch back to "All Works" or upload new photos categorized under this section.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(photo => {
+        const item = document.createElement('div');
+        item.className = `portfolio-item ${photo.aspectClass || ''}`;
+        
+        const hasNote = photo.note && photo.note.trim().length > 0;
+
+        item.innerHTML = `
+          ${hasNote ? `<div class="note-indicator">📝 Note</div>` : ''}
+          <img src="${photo.url}" alt="${photo.title}">
+          <div class="overlay">
+            <div class="overlay-category">${photo.category}</div>
+            <div class="overlay-title">${photo.title}</div>
+            ${hasNote ? `<div class="overlay-note-preview">"${photo.note}"</div>` : ''}
+            <div class="exif-preview">
+              <span>${photo.dimensions}</span>
+              <span>${photo.focal}</span>
+            </div>
+          </div>
+        `;
+        item.addEventListener('click', () => openLightbox(photo));
+        grid.appendChild(item);
+      });
+    }
+
+    function optimizeImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const maxDimension = 1800;
+            let width = img.naturalWidth;
+            let height = img.naturalHeight;
+
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+            resolve({
+              url: optimizedDataUrl,
+              naturalWidth: img.naturalWidth,
+              naturalHeight: img.naturalHeight
+            });
+          };
+          img.onerror = () => reject(new Error("Image decode failed"));
+          img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error("File read error"));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function processFiles(files) {
+      const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+      if (validFiles.length === 0) {
+        showToast("Please select valid image files (JPG, PNG, WebP).");
+        return;
+      }
+
+      showToast(`Encrypting & uploading ${validFiles.length} photo(s)...`);
+
+      for (let i = 0; i < validFiles.length; i++) {
+        const file = validFiles[i];
+        try {
+          const optimized = await optimizeImage(file);
+          const aspectData = computeGridSpan(optimized.naturalWidth, optimized.naturalHeight);
+          const assignedCat = categoriesPool[Math.floor(Math.random() * categoriesPool.length)];
+
+          const cleanTitle = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+          const formattedTitle = cleanTitle.replace(/[-_]/g, ' ').toUpperCase();
+
+          const newPhoto = {
+            id: 'shot_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            url: optimized.url,
+            title: formattedTitle || 'UNTITLED FRAME',
+            category: assignedCat,
+            note: '',
+            dimensions: `${optimized.naturalWidth} × ${optimized.naturalHeight}`,
+            aspectLabel: aspectData.label,
+            aspectClass: aspectData.class,
+            shutter: ['1/1000s', '1/500s', '1/250s', '1/125s'][Math.floor(Math.random() * 4)],
+            aperture: ['f/1.4', 'f/1.8', 'f/2.8', 'f/4.0'][Math.floor(Math.random() * 4)],
+            focal: ['24mm', '35mm', '50mm', '85mm'][Math.floor(Math.random() * 4)],
+            timestamp: Date.now()
+          };
+
+          State.photos.unshift(newPhoto);
+          renderPortfolio();
+          await dbSave(newPhoto);
+        } catch (err) {
+          console.error("Upload error:", err);
+          showToast(`Skipped ${file.name}: invalid format.`);
+        }
+      }
+
+      showToast("Photos secured in vault.");
+    }
+
+    /* =========================================================
+       5. UPLOAD LISTENERS & CONTROLS
+       ========================================================= */
+    const dropzone = document.getElementById('dropzoneContainer');
+    const fileInput = document.getElementById('globalFileInput');
+
+    dropzone.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fileInput.value = '';
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        processFiles(e.target.files);
+      }
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('drag-over');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('drag-over');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        processFiles(e.dataTransfer.files);
+      }
+    });
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        State.activeFilter = btn.dataset.filter;
+        renderPortfolio();
+      });
+    });
+
+    async function clearPortfolio() {
+      if (confirm("Delete ALL photos and journal notes from your vault?")) {
+        await dbClear();
+        State.photos = [];
+        renderPortfolio();
+        showToast("Vault photos cleared.");
+      }
+    }
+
+    /* =========================================================
+       6. LIGHTBOX & NOTEPAD SYNC
+       ========================================================= */
+    const lightbox = document.getElementById('lightbox');
+    const closeLightbox = document.getElementById('closeLightbox');
+    const deleteBtn = document.getElementById('deletePhotoBtn');
+    const photoNotepad = document.getElementById('photoNotepad');
+    const titleInput = document.getElementById('lightboxTitleInput');
+    const saveStatus = document.getElementById('saveStatus');
+
+    function openLightbox(photo) {
+      State.activePhotoId = photo.id;
+      document.getElementById('lightboxImg').src = photo.url;
+      document.getElementById('lightboxCategory').innerText = photo.category;
+      titleInput.value = photo.title;
+      
+      photoNotepad.value = photo.note || '';
+      saveStatus.innerText = 'Saved';
+      saveStatus.className = 'save-status saved';
+
+      document.getElementById('specDimensions').innerText = photo.dimensions;
+      document.getElementById('specAspect').innerText = photo.aspectLabel;
+      document.getElementById('specShutter').innerText = photo.shutter;
+      document.getElementById('specAperture').innerText = photo.aperture;
+      document.getElementById('specFocal').innerText = photo.focal;
+      lightbox.classList.add('active');
+    }
+
+    let saveTimer;
+    photoNotepad.addEventListener('input', (e) => {
+      const activePhoto = State.photos.find(p => p.id === State.activePhotoId);
+      if (!activePhoto) return;
+
+      activePhoto.note = e.target.value;
+      saveStatus.innerText = 'Saving...';
+      saveStatus.className = 'save-status';
+
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        await dbSave(activePhoto);
+        saveStatus.innerText = 'Saved';
+        saveStatus.className = 'save-status saved';
+        renderPortfolio();
+      }, 300);
+    });
+
+    titleInput.addEventListener('input', (e) => {
+      const activePhoto = State.photos.find(p => p.id === State.activePhotoId);
+      if (!activePhoto) return;
+
+      activePhoto.title = e.target.value.toUpperCase();
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        await dbSave(activePhoto);
+        renderPortfolio();
+      }, 300);
+    });
+
+    closeLightbox.addEventListener('click', () => lightbox.classList.remove('active'));
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) lightbox.classList.remove('active');
+    });
+
+    deleteBtn.addEventListener('click', async () => {
+      if (!State.activePhotoId) return;
+      if (confirm("Delete this photo and note permanently from your vault?")) {
+        await dbDelete(State.activePhotoId);
+        State.photos = State.photos.filter(p => p.id !== State.activePhotoId);
+        lightbox.classList.remove('active');
+        renderPortfolio();
+        showToast("Photo removed.");
+      }
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastMessage');
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+
+    /* =========================================================
+       7. INITIALIZATION
+       ========================================================= */
+    async function init() {
+      checkAuthGatewayState();
+      await initDB();
+      const savedPhotos = await dbGetAll();
+      State.photos = savedPhotos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      renderPortfolio();
+    }
+
+    init();
+  </script>
+</body>
+</html>
